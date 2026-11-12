@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Monitoring Ruangan IoT</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800">
+
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <header class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between border-b pb-4 border-gray-200">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Dashboard Edge AI Monitoring</h1>
+        <p class="text-sm text-gray-500">Real-time Telemetry & Room Condition (ESP32-S3)</p>
+      </div>
+      <div class="mt-4 md:mt-0 flex items-center space-x-2">
+        <span class="relative flex h-3 w-3">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+        </span>
+        <span id="last-update" class="text-xs font-mono text-gray-500">Menghubungkan...</span>
+      </div>
+    </header>
+
+    <!-- Section 1: Badge Kondisi Utama & Cards Sensor -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      
+      <!-- Card Status Kondisi -->
+      <div class="md:col-span-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between">
+        <div>
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Status Kondisi Ruangan</h2>
+          <div id="condition-badge" class="mt-2 inline-flex items-center px-4 py-2 rounded-xl text-lg font-bold bg-gray-100 text-gray-600">
+            MEMATUHI DATA...
+          </div>
+        </div>
+        <div class="mt-4 md:mt-0 text-right">
+          <span class="text-xs text-gray-400 block">Status Deteksi Asap (Edge AI)</span>
+          <span id="smoke-status" class="text-base font-semibold text-gray-700">-</span>
+        </div>
+      </div>
+
+      <!-- Card Suhu -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div class="flex justify-between items-center text-gray-500 mb-2">
+          <span class="text-xs uppercase font-semibold tracking-wider">Suhu</span>
+          <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        </div>
+        <div class="flex items-baseline">
+          <span id="temp-val" class="text-4xl font-extrabold text-gray-900">--</span>
+          <span class="text-xl font-medium text-gray-500 ml-1">°C</span>
+        </div>
+      </div>
+
+      <!-- Card Kelembaban -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div class="flex justify-between items-center text-gray-500 mb-2">
+          <span class="text-xs uppercase font-semibold tracking-wider">Kelembaban</span>
+          <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L5.6 15.12a2 2 0 00-1.176.331l-.228.155a2 2 0 00-.796 1.595v1.4a2 2 0 00.586 1.414l.2.2a2 2 0 001.414.586h11.6a2 2 0 001.414-.586l.2-.2a2 2 0 00.586-1.414v-1.4a2 2 0 00-.284-.997l-.228-.345z"></path></svg>
+        </div>
+        <div class="flex items-baseline">
+          <span id="hum-val" class="text-4xl font-extrabold text-gray-900">--</span>
+          <span class="text-xl font-medium text-gray-500 ml-1">%</span>
+        </div>
+      </div>
+
+      <!-- Card Nilai MQ-2 -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div class="flex justify-between items-center text-gray-500 mb-2">
+          <span class="text-xs uppercase font-semibold tracking-wider">Nilai Mentah MQ-2</span>
+          <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+        </div>
+        <div class="flex items-baseline">
+          <span id="mq2-val" class="text-4xl font-extrabold text-gray-900">--</span>
+          <span class="text-xs font-medium text-gray-400 ml-2">ADC (10-bit)</span>
+        </div>
+      </div>
+
+      <!-- Card Total Data Log -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div class="flex justify-between items-center text-gray-500 mb-2">
+          <span class="text-xs uppercase font-semibold tracking-wider">Total Data Telemetri</span>
+          <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path></svg>
+        </div>
+        <div class="flex items-baseline">
+          <span id="log-count" class="text-4xl font-extrabold text-gray-900">--</span>
+          <span class="text-xs font-medium text-gray-400 ml-2">Baris</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Section 2: Grafik Real-Time Telemetri -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      <h3 class="text-lg font-bold text-gray-900 mb-4">Grafik Riwayat Suhu & Kelembaban</h3>
+      <div class="relative h-72 w-full">
+        <canvas id="telemetryChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Polling & Chart Implementation -->
+  <script>
+    // Setup Chart.js
+    const ctx = document.getElementById('telemetryChart').getContext('2d');
+    const telemetryChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: 'Suhu (°C)',
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            data: [],
+            fill: true,
+            tension: 0.3
+          },
+          {
+            label: 'Kelembaban (%)',
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            data: [],
+            fill: true,
+            tension: 0.3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { display: true, grid: { display: false } },
+          y: { beginAtZero: false }
+        }
+      }
+    });
+
+    // Helper merubah style badge kondisi
+    function updateConditionBadge(status) {
+      const badge = document.getElementById('condition-badge');
+      badge.textContent = status.toUpperCase();
+
+      if (status === 'Aman') {
+        badge.className = 'mt-2 inline-flex items-center px-4 py-2 rounded-xl text-lg font-bold bg-emerald-100 text-emerald-800 border border-emerald-200';
+      } else if (status === 'Suhu Tinggi' || status === 'Asap Terdeteksi') {
+        badge.className = 'mt-2 inline-flex items-center px-4 py-2 rounded-xl text-lg font-bold bg-amber-100 text-amber-800 border border-amber-200';
+      } else if (status === 'Bahaya') {
+        badge.className = 'mt-2 inline-flex items-center px-4 py-2 rounded-xl text-lg font-bold bg-rose-100 text-rose-800 border border-rose-200 animate-bounce';
+      } else {
+        badge.className = 'mt-2 inline-flex items-center px-4 py-2 rounded-xl text-lg font-bold bg-gray-100 text-gray-600';
+      }
+    }
+
+    // Function Fetch Data dari Backend Express API
+    async function fetchData() {
+      try {
+        // 1. Fetch Data Telemetri Sensor
+        const resTelemetry = await fetch('/api/sensor-data');
+        const jsonTelemetry = await resTelemetry.json();
+
+        // 2. Fetch Data Kondisi Terbaru
+        const resCondition = await fetch('/api/room-conditions');
+        const jsonCondition = await resCondition.json();
+
+        if (jsonTelemetry.success && jsonTelemetry.data.length > 0) {
+          const latestData = jsonTelemetry.data[0]; // Data paling baru (DESC limit 50)
+          console.log(latestData)
+          document.getElementById('temp-val').textContent = latestData.temperature;
+          document.getElementById('hum-val').textContent = latestData.humidity;
+          document.getElementById('mq2-val').textContent = latestData.mq2_raw;
+          document.getElementById('log-count').textContent = jsonTelemetry.total;
+
+          // Perbarui Chart (Ambil 15 data terakhir & urutkan secara kronologis/ASC)
+          const chartLogs = [...jsonTelemetry.data].slice(0, 15).reverse();
+          telemetryChart.data.labels = chartLogs.map(item => new Date(item.created_at).toLocaleTimeString('id-ID'));
+          telemetryChart.data.datasets[0].data = chartLogs.map(item => item.temperature);
+          telemetryChart.data.datasets[1].data = chartLogs.map(item => item.humidity);
+          telemetryChart.update();
+        }
+
+        if (jsonCondition.success && jsonCondition.data.length > 0) {
+          const latestCondition = jsonCondition.data[0];
+          updateConditionBadge(latestCondition.condition_status);
+          document.getElementById('smoke-status').textContent = 
+            (latestCondition.condition_status.includes('Asap') || latestCondition.condition_status === 'Bahaya') 
+            ? 'ASAP TERDETEKSI' : 'TANPA GAS/ASAP';
+        }
+
+        // Update indikator waktu pembacaan
+        document.getElementById('last-update').textContent = `Diperbarui: ${new Date().toLocaleTimeString('id-ID')}`;
+
+      } catch (err) {
+        console.error('Gagal mengambil data API:', err);
+        document.getElementById('last-update').textContent = 'Koneksi terputus!';
+      }
+    }
+
+    // Inisialisasi awal & polling otomatis setiap 3 detik
+    fetchData();
+    setInterval(fetchData, 3000);
+  </script>
+</body>
+</html>
